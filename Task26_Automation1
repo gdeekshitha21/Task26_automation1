@@ -1,0 +1,40 @@
+import pytest
+from selenium import webdriver
+from selenium.webdriver.common.by import By
+from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.support import expected_conditions as EC
+
+class IMDbSearchPage:
+    def __init__(self, driver):
+        self.driver = driver
+        self.search_box = (By.ID, 'navbar-query')
+        self.search_dropdown = (By.ID, 'navbar-search-category-select')
+
+    def enter_search_query(self, query):
+        WebDriverWait(self.driver, 10).until(EC.visibility_of_element_located(self.search_box)).send_keys(query)
+
+    def select_search_category(self, category):
+        dropdown = WebDriverWait(self.driver, 10).until(EC.visibility_of_element_located(self.search_dropdown))
+        dropdown.click()
+        self.driver.find_element(By.XPATH, f"//option[contains(text(),'{category}')]").click()
+
+    def click_search_button(self):
+        self.driver.find_element(By.ID, 'navbar-submit-button').click()
+
+@pytest.fixture
+def browser():
+    driver = webdriver.Chrome() # You can change to your preferred webdriver
+    driver.implicitly_wait(10)
+    yield driver
+    driver.quit()
+
+def test_imdb_search(browser):
+    browser.get("https://www.imdb.com/search/name/")
+    search_page = IMDbSearchPage(browser)
+    search_page.enter_search_query("Tom Hanks")
+    search_page.select_search_category("Celebs")
+    search_page.click_search_button()
+    WebDriverWait(browser, 10).until(EC.url_contains("search/name"))
+
+if __name__ == "__main__":
+    pytest.main()
